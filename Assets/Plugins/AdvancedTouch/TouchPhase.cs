@@ -7,8 +7,8 @@ namespace AdvancedTouch
 {
 	public enum TouchPhase
 	{
-		Down = 0,
-		None,
+		Begin = 0,
+		Down,
 		Hold,
 		Drag,
 		Up,

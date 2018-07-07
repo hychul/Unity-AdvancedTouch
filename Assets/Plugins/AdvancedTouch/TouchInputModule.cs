@@ -55,6 +55,8 @@ namespace AdvancedTouch
 					return;
 				
 				touch = new Touch(0, Input.mousePosition);
+				touch.phase = TouchPhase.Begin;
+
 				touchById.Add(0, touch);
 
 				touchEventList.Add(touch);
@@ -79,7 +81,7 @@ namespace AdvancedTouch
 				else if (holdTriggerDelay < touch.holdTime)
 					touch.phase = TouchPhase.Hold;
 				else
-					touch.phase = TouchPhase.None;
+					touch.phase = TouchPhase.Down;
 
 				touchEventList.Add(touch);
 			}
@@ -131,6 +133,8 @@ namespace AdvancedTouch
 							break;
 
 						touch = new Touch(input.fingerId, input.position);
+						touch.phase = TouchPhase.Begin;
+
 						touchById.Add(input.fingerId, touch);
 
 						touchEventList.Add(touch);
@@ -153,7 +157,7 @@ namespace AdvancedTouch
 						else if (holdTriggerDelay < touch.holdTime)
 							touch.phase = TouchPhase.Hold;
 						else
-							touch.phase = TouchPhase.None;
+							touch.phase = TouchPhase.Down;
 
 						touchEventList.Add(touch);
 						break;

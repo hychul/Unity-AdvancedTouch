@@ -25,8 +25,7 @@ namespace AdvancedTouch
 		{
 			this.fingerId = fingerId;
 			this.point = point;
-			prevPoint = point;
-			phase = TouchPhase.Down;
+			this.prevPoint = point;
 		}
 
 		public void UpdatePoint(Vector2 newPoint)
