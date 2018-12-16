@@ -6,8 +6,37 @@ using UnityEngine.EventSystems;
 
 namespace AdvancedTouch 
 {
-	public class TouchInputModule : MonoBehaviour
-	{
+	public class AdvancedTouchInputModule : MonoBehaviour
+    {
+        private class AdvancedTouch
+        {
+            public int fingerId;
+
+            public Vector2 point;
+            public Vector2 prevPoint;
+
+            public TouchPhase phase;
+
+            public float holdTime;
+            public float dragLength;
+
+			public Touch ToTouch() {
+				Touch touch = new Touch() {
+                    fingerId = this.fingerId,
+                	point = this.point,
+                	prevPoint = this.prevPoint,
+                	phase = this.phase,
+                	holdTime = this.holdTime,
+                	dragLength = this.dragLength
+				};
+
+				return touch;
+			}
+        }
+
+        [Serializable]
+        public class TouchEvent : UnityEvent<List<Touch>> { }
+
 		private const float CRITERIA_DPI = 320.0f;
 
 		[SerializeField]
@@ -22,7 +51,8 @@ namespace AdvancedTouch
 
 		public TouchEvent onTouched;
 
-		private readonly Dictionary<int, Touch> touchById = new Dictionary<int, Touch>();
+		private readonly Stack<AdvancedTouch> touchPool = new Stack<AdvancedTouch>();
+		private readonly Dictionary<int, AdvancedTouch> touchById = new Dictionary<int, AdvancedTouch>();
 		private readonly List<Touch> touchEventList = new List<Touch>();
 
 		private void Start()
@@ -45,7 +75,7 @@ namespace AdvancedTouch
 
 		private void MouseInput()
 		{
-			Touch touch;
+			AdvancedTouch touch;
 			if (Input.GetMouseButtonDown(0))
 			{
 				if (touchById.ContainsKey(0))
@@ -54,12 +84,12 @@ namespace AdvancedTouch
 				if (ignoreOverUI && EventSystem.current.IsPointerOverGameObject())
 					return;
 				
-				touch = new Touch(0, Input.mousePosition);
-				touch.phase = TouchPhase.Begin;
+				touch = GetTouch(0, Input.mousePosition);
+				touch.phase = TouchPhase.None;
 
 				touchById.Add(0, touch);
 
-				touchEventList.Add(touch);
+				touchEventList.Add(touch.ToTouch());
 			}
 			else if (Input.GetMouseButton(0))
 			{
@@ -68,11 +98,10 @@ namespace AdvancedTouch
 
 				touch = touchById[0];
 
-				var previousPos = touch.point;
-				touch.UpdatePoint(Input.mousePosition);
+				UpdateTouch(touch, Input.mousePosition);
 
-				if (0.0f < (touch.point - previousPos).magnitude)
-					touch.dragLength += (touch.point - previousPos).magnitude;
+				if (0.0f < (touch.point - touch.prevPoint).magnitude)
+					touch.dragLength += (touch.point - touch.prevPoint).magnitude;
 				else
 					touch.holdTime += Time.deltaTime;
 
@@ -83,7 +112,7 @@ namespace AdvancedTouch
 				else
 					touch.phase = TouchPhase.Down;
 
-				touchEventList.Add(touch);
+				touchEventList.Add(touch.ToTouch());
 			}
 			else if (Input.GetMouseButtonUp(0))
 			{
@@ -92,7 +121,8 @@ namespace AdvancedTouch
 
 				touch = touchById[0];
 				touchById.Remove(0);
-				touch.UpdatePoint(Input.mousePosition);
+                PutTouch(touch);
+				UpdateTouch(touch, Input.mousePosition);
 
 				switch (touch.phase)
 				{
@@ -107,7 +137,7 @@ namespace AdvancedTouch
 						break;
 				}
 
-				touchEventList.Add(touch);
+				touchEventList.Add(touch.ToTouch());
 			}
 
 			onTouched.Invoke(touchEventList);
@@ -122,7 +152,7 @@ namespace AdvancedTouch
 			{
 				var input = touches[i];
 
-				Touch touch;
+				AdvancedTouch touch;
 				switch (input.phase)
 				{
 					case UnityEngine.TouchPhase.Began:
@@ -132,12 +162,12 @@ namespace AdvancedTouch
 						if (ignoreOverUI && EventSystem.current.IsPointerOverGameObject(input.fingerId))
 							break;
 
-						touch = new Touch(input.fingerId, input.position);
-						touch.phase = TouchPhase.Begin;
+						touch = GetTouch(input.fingerId, input.position);
+						touch.phase = TouchPhase.None;
 
 						touchById.Add(input.fingerId, touch);
 
-						touchEventList.Add(touch);
+						touchEventList.Add(touch.ToTouch());
 						break;
 					case UnityEngine.TouchPhase.Stationary:
 					case UnityEngine.TouchPhase.Moved:
@@ -145,7 +175,7 @@ namespace AdvancedTouch
 							break;
 
 						touch = touchById[input.fingerId];
-						touch.UpdatePoint(input.position);
+						UpdateTouch(touch, input.position);
 
 						if (tremorRevision < input.deltaPosition.magnitude)
 							touch.dragLength += input.deltaPosition.magnitude;
@@ -159,16 +189,17 @@ namespace AdvancedTouch
 						else
 							touch.phase = TouchPhase.Down;
 
-						touchEventList.Add(touch);
+						touchEventList.Add(touch.ToTouch());
 						break;
 					default:
 						if (!touchById.ContainsKey(input.fingerId))
 							break;
 
 						touch = touchById[input.fingerId];
-						touch.UpdatePoint(input.position);
 						touchById.Remove(input.fingerId);
-						
+						PutTouch(touch);
+                        UpdateTouch(touch, input.position);
+
 						switch (touch.phase)
 						{
 							case TouchPhase.Hold:
@@ -182,13 +213,47 @@ namespace AdvancedTouch
 								break;
 						}
 
-						touchEventList.Add(touch);
+						touchEventList.Add(touch.ToTouch());
 						break;
 				}
 			}
 
 			onTouched.Invoke(touchEventList);
 			touchEventList.Clear();
+		}
+
+		private void UpdateTouch(AdvancedTouch touch, Vector2 point)
+		{
+			touch.prevPoint = touch.point;
+			touch.point = point;
+		}
+
+		private AdvancedTouch GetTouch(int fingerId, Vector2 point)
+		{
+			AdvancedTouch touch;
+
+			if (0 < touchPool.Count)
+			{
+				touch = touchPool.Pop();
+			}
+			else
+			{
+				touch = new AdvancedTouch();
+			}
+
+            touch.fingerId = fingerId;
+            touch.point = point;
+            touch.prevPoint = point;
+            touch.phase = TouchPhase.None;
+            touch.holdTime = 0;
+            touch.dragLength = 0;
+
+			return touch;
+		}
+
+		private void PutTouch(AdvancedTouch touch)
+		{
+			touchPool.Push(touch);
 		}
 	}
 }

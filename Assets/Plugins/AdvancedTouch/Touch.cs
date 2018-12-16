@@ -4,34 +4,16 @@ using UnityEngine;
 
 namespace AdvancedTouch
 {
-	public class Touch
-	{
-		private int fingerId;
-		
-		public Vector2 point;
-		public Vector2 prevPoint;
+    public struct Touch
+    {
+        public int fingerId;
 
-		public TouchPhase phase;
+        public Vector2 point;
+        public Vector2 prevPoint;
 
-		public float holdTime;
-		public float dragLength;
+        public TouchPhase phase;
 
-		public int FingerId
-		{
-			get { return fingerId; }
-		}
-
-		public Touch(int fingerId, Vector2 point)
-		{
-			this.fingerId = fingerId;
-			this.point = point;
-			this.prevPoint = point;
-		}
-
-		public void UpdatePoint(Vector2 newPoint)
-		{
-			prevPoint = point;
-			point = newPoint;
-		}
-	}
+        public float holdTime;
+        public float dragLength;
+    }
 }

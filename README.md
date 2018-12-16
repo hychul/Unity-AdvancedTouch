@@ -1,6 +1,6 @@
 # AdvancedTouch
 
-![](https://img.shields.io/badge/Unity-2018.1-blue.svg?style=flat-square) ![](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)
+![](https://img.shields.io/badge/Unity-2018.3-blue.svg?style=flat-square) ![](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)
 
 Unity plugin for advanced touch input handling.
 

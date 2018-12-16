@@ -7,8 +7,7 @@ using UnityEngine.UI;
 
 public class SimpleTouchPresenter : MonoBehaviour 
 {
-	private const string TOUCH_COUNT_FORMAT = "Touch Count : {0}\n";
-	private const string TOUCH_PHASE_FORMAT = "Touch Phase : {0}";
+	private const string TOUCH_TEXT_FORMAT = "Touch Count : {0}\nTouch Phase : {1}";
 
 	[SerializeField] private Text txtPresent;
 
@@ -17,10 +16,7 @@ public class SimpleTouchPresenter : MonoBehaviour
 		
 		var touchCount = touchList.Count;
 
-		stringBuilder.Append(string.Format(TOUCH_COUNT_FORMAT, touchCount));
-
-		if (0 < touchCount)
-			stringBuilder.Append(string.Format(TOUCH_PHASE_FORMAT, touchList[0].phase));
+		stringBuilder.Append(string.Format(TOUCH_TEXT_FORMAT, touchCount, 0 < touchCount ? touchList[0].phase : AdvancedTouch.TouchPhase.None));
 
 		txtPresent.text = stringBuilder.ToString();
 	}
